@@ -1,446 +1,940 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CARE Workshop Leaderboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CARE Workshop - Leaderboard</title>
+  
+  <!-- Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Enable Tailwind Class Dark Mode -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Google Fonts: Kanit & Mali (For Chibi Fantasy vibe) -->
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700;900&family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* CSS Variables for Themeing */
+    :root {
+      --bg-color: #fdf8f5; /* Warm parchment / Light meadow */
+      --card-bg: #ffffff;
+      --text-main: #451a03; /* Dark brown for classic RPG feel */
+      --text-muted: #78350f;
+      --border-color: #d6d3d1; /* Stone/Wood border */
+      --primary: #f59e0b; /* Amber/Gold */
+      --shadow-color: #a8a29e;
+    }
+
+    .dark-theme {
+      --bg-color: #0f172a; /* Midnight blue forest */
+      --card-bg: #1e293b; /* Dark slate */
+      --text-main: #f8fafc;
+      --text-muted: #cbd5e1;
+      --border-color: #334155;
+      --primary: #3b82f6; /* Mana blue */
+      --shadow-color: #020617;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      transition: background-color 0.3s ease, color 0.3s ease;
+      font-family: 'Kanit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      /* Subtle magical dotted pattern */
+      background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+
+    /* Typography */
+    .font-chibi {
+      font-family: 'Mali', 'Kanit', cursive;
+    }
     
-    <style>
-        body { font-family: 'Mali', sans-serif; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); min-height: 100vh; overflow-x: hidden; }
-        @keyframes chibi-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .animate-chibi { animation: chibi-bounce 2.5s infinite ease-in-out; }
-        .animate-chibi-fast { animation: chibi-bounce 1.8s infinite ease-in-out; }
-        @keyframes badge-glow { 0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.6)); transform: scale(1); } 50% { filter: drop-shadow(0 0 15px rgba(255, 215, 0, 1)); transform: scale(1.1); } }
-        .glow-badge { animation: badge-glow 2s infinite alternate; }
-        @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -60px) scale(1.2); } }
-        .floating-exp { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); font-weight: 700; font-size: 1.5rem; text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff; animation: floatUp 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; pointer-events: none; z-index: 50; }
-        .glass-panel { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.8); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); }
-        .chibi-card { transition: all 0.3s ease; }
-        .chibi-card:hover { transform: translateY(-5px); }
-        .img-circle-glow { border-radius: 50%; border: 4px solid white; box-shadow: 0 0 15px rgba(255, 255, 255, 0.8); background-color: #fff; object-fit: cover; }
-        .rank-badge-container { position: absolute; top: -10px; right: -10px; z-index: 10; }
-        .fallback-emoji { display: flex; align-items: center; justify-content: center; font-size: 2.5rem; background: white; border-radius: 50%; border: 4px solid rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(255, 255, 255, 0.8); }
-        .toast-enter { animation: slideInRight 0.3s ease-out forwards; }
-        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    </style>
+    .text-outline {
+      text-shadow: 2px 2px 0px rgba(0,0,0,0.8), -1px -1px 0px rgba(0,0,0,0.8), 1px -1px 0px rgba(0,0,0,0.8), -1px 1px 0px rgba(0,0,0,0.8);
+    }
+
+    /* Chibi RPG Card Style (Replaces Glassmorphism) */
+    .rpg-card {
+      background: var(--card-bg);
+      border: 3px solid var(--border-color);
+      border-radius: 24px;
+      box-shadow: 0 8px 0 0 var(--shadow-color);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+    }
+    
+    .rpg-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 0 0 var(--shadow-color);
+    }
+
+    /* RPG Buttons */
+    .btn-rpg {
+      border: 2px solid rgba(0,0,0,0.15);
+      border-radius: 16px;
+      box-shadow: 0 4px 0 0 rgba(0,0,0,0.25);
+      transition: all 0.1s;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-rpg:active {
+      transform: translateY(4px);
+      box-shadow: 0 0 0 0 rgba(0,0,0,0.25);
+    }
+
+    /* Top 3 Leaderboard Badges */
+    .rank-badge {
+      position: absolute;
+      top: -20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.5rem;
+      border: 4px solid #fff;
+      box-shadow: 0 4px 0 0 rgba(0,0,0,0.2);
+      z-index: 10;
+      font-family: 'Mali', cursive;
+      overflow: hidden;
+    }
+
+    /* SWAL Custom Chibi Theme Overrides */
+    .swal2-popup {
+      background: var(--card-bg) !important;
+      color: var(--text-main) !important;
+      border: 4px solid var(--border-color) !important;
+      border-radius: 24px !important;
+      box-shadow: 0 10px 0 0 var(--shadow-color) !important;
+      font-family: 'Kanit', sans-serif !important;
+      padding-bottom: 24px !important;
+    }
+    .swal2-title { 
+      font-family: 'Mali', cursive !important; 
+      font-weight: 700 !important; 
+      color: var(--text-main) !important; 
+    }
+    .swal2-html-container { color: var(--text-muted) !important; }
+    
+    .swal2-input, .swal2-select { 
+      border-radius: 12px !important;
+      border: 2px solid var(--border-color) !important;
+      background: var(--bg-color) !important; 
+      color: var(--text-main) !important;
+      font-family: 'Kanit', sans-serif !important;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05) !important;
+      transition: all 0.2s;
+      width: 85% !important; /* ป้องกันช่องกรอกล้นกรอบ */
+      margin: 1em auto !important; /* จัดกึ่งกลางเสมอ */
+      box-sizing: border-box !important;
+    }
+    .swal2-input:focus, .swal2-select:focus {
+      border-color: var(--primary) !important;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
+      outline: none !important;
+    }
+
+    /* Apply RPG button style to all SWAL buttons */
+    .swal2-actions { gap: 12px; margin-top: 1.5em !important; }
+    .swal2-confirm, .swal2-cancel, .swal2-deny {
+      border: 2px solid rgba(0,0,0,0.15) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 4px 0 0 rgba(0,0,0,0.2) !important;
+      transition: all 0.1s !important;
+      font-weight: 800 !important;
+      font-family: 'Kanit', sans-serif !important;
+      padding: 10px 28px !important;
+      font-size: 1.1rem !important;
+    }
+    .swal2-confirm:active, .swal2-cancel:active, .swal2-deny:active {
+      transform: translateY(4px) !important;
+      box-shadow: 0 0 0 0 rgba(0,0,0,0.2) !important;
+    }
+    .swal2-confirm { background-color: #22c55e !important; color: white !important; border-color: #15803d !important; }
+    .swal2-cancel { background-color: #64748b !important; color: white !important; border-color: #334155 !important; }
+    
+    /* Animations */
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+      100% { transform: translateY(0px); }
+    }
+    .animate-float { animation: float 4s ease-in-out infinite; }
+    
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+  </style>
 </head>
-<body class="text-gray-800 pb-20">
-
-    <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
-
-    <div class="container mx-auto px-4 pt-10 max-w-4xl">
-        <div class="text-center mb-12">
-            <h1 class="text-4xl md:text-5xl font-bold text-white drop-shadow-md mb-2">🌟 หอเกียรติยศนักผจญภัย 🌟</h1>
-            <p class="text-lg text-pink-600 font-semibold bg-white/50 inline-block px-4 py-1 rounded-full border border-white/80">Leaderboard กิลด์ที่แข็งแกร่งที่สุด</p>
-        </div>
-
-        <div id="top3-container" class="flex flex-row items-end justify-center gap-2 md:gap-6 mb-12 h-[280px]">
-            <div class="text-white font-bold animate-pulse text-xl">กำลังอัญเชิญข้อมูลจากคัมภีร์... ✨</div>
-        </div>
-
-        <div class="glass-panel rounded-3xl p-6 md:p-8">
-            <h2 class="text-2xl font-bold mb-6 text-gray-700 border-b-2 border-pink-200 pb-2">นักผจญภัยลำดับอื่นๆ ⚔️</h2>
-            <div id="others-container" class="flex flex-col gap-4"></div>
-        </div>
+<body id="app">
+  <div :class="{'dark-theme dark': theme === 'dark', 'light-theme': theme === 'light'}" class="min-h-screen relative pb-20">
+    
+    <!-- Background Magical Decor -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+      <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-500/20 blur-[100px]" style="animation: pulse-glow 6s infinite alternate;"></div>
+      <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-sky-500/20 blur-[120px]" style="animation: pulse-glow 8s infinite alternate-reverse;"></div>
+      <div class="absolute top-[20%] right-[10%] text-yellow-400/60 text-4xl animate-bounce" style="animation-duration: 3s;">✨</div>
+      <div class="absolute bottom-[30%] left-[5%] text-emerald-400/50 text-3xl animate-bounce" style="animation-duration: 4s;">🍃</div>
     </div>
 
-    <!-- ปุ่ม Admin -->
-    <button onclick="openPinModal()" class="fixed bottom-6 right-6 w-16 h-16 bg-pink-400 hover:bg-pink-500 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition transform hover:scale-110 z-40">
-        <i class="fas fa-cog"></i>
-    </button>
-
-    <!-- 🔐 PIN Modal -->
-    <div id="pin-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 flex flex-col items-center shadow-2xl transform scale-95 transition-transform duration-300" id="pin-modal-content">
-            <div class="text-5xl mb-3 animate-chibi-fast">🔐</div>
-            <h2 class="text-2xl font-bold text-pink-600 mb-1">ยืนยันตัวตน</h2>
-            <p class="text-gray-500 mb-5 text-sm text-center">สำหรับผู้ดูแลระบบเท่านั้น</p>
-            <input type="password" id="admin-pin-input" maxlength="4" class="w-32 text-center text-3xl tracking-widest border-2 border-pink-200 rounded-xl p-3 outline-none focus:border-pink-500 mb-6 font-bold text-gray-700 shadow-inner" placeholder="••••">
-            <div class="flex gap-3 w-full">
-                <button onclick="closePinModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition">ยกเลิก</button>
-                <button onclick="verifyPin()" class="flex-1 bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-bold py-3 rounded-xl transition shadow-lg">ยืนยัน</button>
-            </div>
+    <!-- Navigation Bar -->
+    <nav class="rpg-card sticky top-2 z-50 mx-4 mt-2 px-4 py-3 flex justify-between items-center mb-8 bg-opacity-90 backdrop-blur-sm">
+      <div class="flex items-center gap-2 md:gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+          <i class="ph-fill ph-sword text-xl text-white"></i>
         </div>
-    </div>
+        <h1 class="font-chibi font-bold text-xl md:text-2xl tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-orange-500 dark:from-amber-400 dark:to-yellow-300">
+          CARE <span class="hidden md:inline">Workshop</span>
+        </h1>
+      </div>
+      
+      <div class="flex items-center gap-2 md:gap-4">
+        <!-- Sound Toggle -->
+        <button @click="toggleSound" class="btn-rpg w-10 h-10 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white">
+          <i :class="['ph-fill text-xl', sound ? 'ph-speaker-high' : 'ph-speaker-slash']"></i>
+        </button>
+        <!-- Theme Toggle -->
+        <button @click="toggleTheme" class="btn-rpg w-10 h-10 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300">
+          <i :class="['ph-fill text-xl', theme === 'dark' ? 'ph-moon' : 'ph-sun']"></i>
+        </button>
+        <!-- Refresh Button -->
+        <button @click="refreshData" class="btn-rpg w-10 h-10 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400">
+          <i :class="['ph-bold ph-arrows-clockwise text-xl', isRefreshing ? 'animate-spin' : '']"></i>
+        </button>
+        <!-- Lang Toggle -->
+        <button @click="toggleLang" class="btn-rpg px-3 h-10 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 font-chibi">
+          {{ lang.toUpperCase() }}
+        </button>
+        <!-- Admin Login -->
+        <button @click="adminAuth" class="btn-rpg w-10 h-10 bg-red-100 dark:bg-red-900/50 text-red-500">
+          <i class="ph-fill ph-heart text-xl"></i>
+        </button>
+      </div>
+    </nav>
 
-    <!-- 🛡️ Admin Panel Modal -->
-    <div id="admin-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden z-[60] flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="admin-modal-content">
-            <div class="bg-pink-100 p-5 flex justify-between items-center border-b border-pink-200">
-                <h2 class="text-2xl font-bold text-pink-600"><i class="fas fa-chess-queen mr-2"></i>ระบบจัดการกิลด์</h2>
-                <button onclick="closeAdminPanel()" class="text-gray-500 hover:text-red-500 text-2xl leading-none">&times;</button>
-            </div>
-            <div class="flex border-b border-gray-200 overflow-x-auto">
-                <button onclick="switchTab('manage')" id="tab-manage" class="flex-1 whitespace-nowrap py-3 px-2 font-semibold text-pink-600 border-b-4 border-pink-400 bg-pink-50/50">จัดการ EXP</button>
-                <button onclick="switchTab('urls')" id="tab-urls" class="flex-1 whitespace-nowrap py-3 px-2 font-semibold text-gray-500 hover:bg-gray-50">จัดการ URL (ตามอันดับ)</button>
-                <button onclick="switchTab('add')" id="tab-add" class="flex-1 whitespace-nowrap py-3 px-2 font-semibold text-gray-500 hover:bg-gray-50">เพิ่มกิลด์ใหม่</button>
-            </div>
-            <div class="p-6 overflow-y-auto flex-1 bg-gray-50">
-                <div id="panel-manage" class="space-y-4"></div>
-                <div id="panel-urls" class="hidden space-y-4"></div>
-                <div id="panel-add" class="hidden space-y-4">
-                    <div class="grid grid-cols-1 gap-4">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">ชื่อกิลด์ <span class="text-red-500">*</span></label>
-                            <input type="text" id="add-name" class="w-full border-2 border-pink-200 rounded-xl p-3 outline-none focus:border-pink-500 text-lg" placeholder="กรอกชื่อกิลด์ที่นี่...">
-                        </div>
-                    </div>
-                    <button onclick="submitAddGuild()" class="w-full mt-2 bg-gradient-to-r from-pink-400 to-purple-400 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition text-lg">✨ สร้างกิลด์ใหม่ ✨</button>
+    <!-- Main Container -->
+    <main class="container mx-auto px-4 max-w-6xl">
+      
+      <!-- Loading State -->
+      <div v-if="isLoading" class="flex flex-col items-center justify-center py-20">
+        <div class="relative w-24 h-24 mb-6 animate-bounce">
+          <i class="ph-fill ph-shield-star text-7xl text-amber-500 absolute top-0 left-0"></i>
+          <i class="ph-duotone ph-spinner-gap animate-spin text-7xl text-white absolute top-0 left-0 opacity-80"></i>
+        </div>
+        <p class="text-xl font-chibi animate-pulse text-amber-700 dark:text-amber-300">{{ t('loading') }}</p>
+      </div>
+
+      <div v-else>
+        <!-- Tab Navigation (Admin Only) -->
+        <div v-if="isAdmin" class="flex flex-wrap gap-3 mb-8 justify-center">
+          <button @click="activeTab = 'leaderboard'" :class="['btn-rpg px-6 py-2', activeTab === 'leaderboard' ? 'bg-amber-500 text-white border-amber-600' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300']">{{ t('leaderboard') }}</button>
+          <button @click="activeTab = 'adminTeams'" :class="['btn-rpg px-6 py-2', activeTab === 'adminTeams' ? 'bg-amber-500 text-white border-amber-600' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300']">{{ t('manageTeams') }}</button>
+          <button v-if="adminRole === 'super'" @click="activeTab = 'adminLogs'" :class="['btn-rpg px-6 py-2', activeTab === 'adminLogs' ? 'bg-amber-500 text-white border-amber-600' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300']">{{ t('logs') }}</button>
+          <button v-if="adminRole === 'super'" @click="activeTab = 'adminSettings'" :class="['btn-rpg px-6 py-2', activeTab === 'adminSettings' ? 'bg-amber-500 text-white border-amber-600' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300']">{{ t('settings') }}</button>
+        </div>
+
+        <!-- LEADERBOARD VIEW -->
+        <div v-show="activeTab === 'leaderboard'">
+          <div class="text-center mb-10 relative pt-4">
+            <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl opacity-20"><i class="ph-fill ph-crown"></i></span>
+            <h2 class="font-chibi text-4xl md:text-6xl font-black mb-8 text-white text-outline tracking-wider leading-tight">{{ t('leaderboard') }}</h2>
+            <p class="font-chibi text-lg md:text-xl font-bold text-amber-800 dark:text-amber-200 bg-amber-100/80 dark:bg-slate-800/80 inline-block px-6 py-1 mt-2 rounded-full border-2 border-amber-300 dark:border-slate-600">{{ t('subtitle') }}</p>
+          </div>
+
+          <!-- Podium (Top 3) -->
+          <div v-if="teams.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 items-end mt-12 md:mt-24 px-4">
+            
+            <!-- Rank 2 -->
+            <div v-if="teams.length > 1" class="order-2 md:order-1 flex flex-col items-center animate-float" style="animation-delay: 0.5s;">
+              <div class="rpg-card w-full max-w-xs p-5 relative flex flex-col items-center text-center border-gray-300 dark:border-gray-600 bg-gradient-to-b from-gray-100 to-white dark:from-gray-800 dark:to-gray-900">
+                <div class="rank-badge bg-gray-300 text-gray-700 border-gray-100">
+                  <img v-if="getEffectiveBadge(teams[1], 2)" :src="getEffectiveBadge(teams[1], 2)" class="w-full h-full object-cover">
+                  <span v-else>2</span>
                 </div>
+                <div class="relative mt-3 mb-3">
+                  <img :src="getEffectiveAvatar(teams[1], 2)" @error="$event.target.src='https://ui-avatars.com/api/?name='+teams[1].name+'&background=f59e0b&color=fff'; $event.target.onerror=null;" class="w-24 h-24 rounded-full border-4 border-gray-300 object-cover bg-white">
+                  <span class="absolute -bottom-2 -right-2 bg-gray-700 text-white text-xs font-bold px-2 py-1 rounded-full border-2 border-white">No.2</span>
+                </div>
+                <h3 class="font-chibi font-bold text-xl mb-1 line-clamp-1">{{ teams[1].name }}</h3>
+                <div class="bg-gray-200 dark:bg-gray-800 w-full rounded-full py-1 mb-4 border-2 border-gray-300 dark:border-gray-700">
+                  <p class="text-xl font-black text-gray-600 dark:text-gray-300">{{ teams[1].score }} <span class="text-xs">EXP</span></p>
+                </div>
+                <div class="flex gap-2 w-full">
+                  <button @click="joinTeamPrompt(teams[1])" class="btn-rpg flex-1 bg-green-500 text-white hover:bg-green-400 border-green-700 h-11">{{ t('joinTeam') }}</button>
+                  <button @click="viewMembers(teams[1])" class="btn-rpg bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 border-blue-300 dark:border-blue-700 w-11 h-11"><i class="ph-bold ph-users text-lg"></i></button>
+                </div>
+              </div>
             </div>
-        </div>
-    </div>
+            <div v-else class="order-2 md:order-1 hidden md:block"></div>
 
-    <!-- 🙋‍♂️ Join Modal -->
-    <div id="join-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 flex flex-col items-center shadow-2xl transform scale-95 transition-transform duration-300" id="join-modal-content">
-            <div class="text-5xl mb-3 animate-chibi-fast" id="join-modal-emoji">✨</div>
-            <h2 class="text-2xl font-bold text-pink-600 mb-1" id="join-modal-title">เข้าร่วมกิลด์</h2>
-            <p class="text-gray-500 mb-5 text-sm text-center">ระบุชื่อเล่นของคุณเพื่อเข้าร่วมกิลด์</p>
-            <input type="text" id="join-nickname-input" class="w-full text-center border-2 border-pink-200 rounded-xl p-3 outline-none focus:border-pink-500 mb-6 font-bold text-gray-700 shadow-inner" placeholder="ชื่อเล่น...">
-            <div class="flex gap-3 w-full">
-                <button onclick="closeJoinModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition">ยกเลิก</button>
-                <button onclick="submitJoinGuild()" class="flex-1 bg-gradient-to-r from-pink-400 to-purple-400 text-white font-bold py-3 rounded-xl shadow-lg">ยืนยัน</button>
+            <!-- Rank 1 -->
+            <div class="order-1 md:order-2 flex flex-col items-center animate-float z-10 transform md:scale-110 mb-8 md:mb-0">
+              <div class="rpg-card w-full max-w-sm p-6 relative flex flex-col items-center text-center border-yellow-400 bg-gradient-to-b from-yellow-50 to-white dark:from-yellow-900/40 dark:to-gray-900">
+                <div class="rank-badge bg-yellow-400 text-yellow-900 border-yellow-100 w-16 h-16 text-3xl -top-8">
+                  <img v-if="getEffectiveBadge(teams[0], 1)" :src="getEffectiveBadge(teams[0], 1)" class="w-full h-full object-cover">
+                  <i v-else class="ph-fill ph-crown"></i>
+                </div>
+                <div class="relative mt-4 mb-4">
+                  <!-- Glow effect behind avatar -->
+                  <div class="absolute inset-0 bg-yellow-400 blur-md rounded-full opacity-50 animate-pulse"></div>
+                  <img :src="getEffectiveAvatar(teams[0], 1)" @error="$event.target.src='https://ui-avatars.com/api/?name='+teams[0].name+'&background=f59e0b&color=fff'; $event.target.onerror=null;" class="relative w-32 h-32 rounded-full border-4 border-yellow-400 object-cover bg-white z-10">
+                  <span class="absolute -bottom-2 -right-2 bg-yellow-600 text-white text-sm font-bold px-3 py-1 rounded-full border-2 border-white z-20 shadow-sm">No.1</span>
+                </div>
+                <h3 class="font-chibi font-black text-2xl mb-2 text-yellow-700 dark:text-yellow-400">{{ teams[0].name }}</h3>
+                <div class="bg-yellow-100 dark:bg-yellow-900/50 w-full rounded-full py-2 mb-5 border-2 border-yellow-300 dark:border-yellow-700">
+                  <p class="text-2xl font-black text-yellow-600 dark:text-yellow-400">{{ teams[0].score }} <span class="text-sm">EXP</span></p>
+                </div>
+                <div class="flex gap-2 w-full">
+                  <button @click="joinTeamPrompt(teams[0])" class="btn-rpg flex-1 bg-gradient-to-b from-yellow-400 to-amber-500 text-white hover:from-yellow-300 hover:to-amber-400 border-amber-600 h-12 text-lg">{{ t('joinTeam') }}</button>
+                  <button @click="viewMembers(teams[0])" class="btn-rpg bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 border-blue-300 dark:border-blue-700 w-12 h-12"><i class="ph-bold ph-users text-xl"></i></button>
+                </div>
+              </div>
             </div>
-        </div>
-    </div>
 
-    <!-- 📋 Members Modal -->
-    <div id="members-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-3xl w-full max-w-md p-6 flex flex-col shadow-2xl transform scale-95 transition-transform duration-300 max-h-[80vh]" id="members-modal-content">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h2 class="text-xl font-bold text-blue-500 flex items-center gap-2"><i class="fas fa-users"></i> <span id="members-modal-title">สมาชิก</span></h2>
-                <button onclick="closeMembersModal()" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+            <!-- Rank 3 -->
+            <div v-if="teams.length > 2" class="order-3 md:order-3 flex flex-col items-center animate-float" style="animation-delay: 1s;">
+              <div class="rpg-card w-full max-w-xs p-5 relative flex flex-col items-center text-center border-amber-600 dark:border-amber-800 bg-gradient-to-b from-orange-50 to-white dark:from-orange-900/30 dark:to-gray-900">
+                <div class="rank-badge bg-amber-600 text-white border-orange-200">
+                  <img v-if="getEffectiveBadge(teams[2], 3)" :src="getEffectiveBadge(teams[2], 3)" class="w-full h-full object-cover">
+                  <span v-else>3</span>
+                </div>
+                <div class="relative mt-3 mb-3">
+                  <img :src="getEffectiveAvatar(teams[2], 3)" @error="$event.target.src='https://ui-avatars.com/api/?name='+teams[2].name+'&background=f59e0b&color=fff'; $event.target.onerror=null;" class="w-24 h-24 rounded-full border-4 border-amber-600 object-cover bg-white">
+                  <span class="absolute -bottom-2 -right-2 bg-amber-800 text-white text-xs font-bold px-2 py-1 rounded-full border-2 border-white">No.3</span>
+                </div>
+                <h3 class="font-chibi font-bold text-xl mb-1 line-clamp-1">{{ teams[2].name }}</h3>
+                <div class="bg-orange-100 dark:bg-orange-900/50 w-full rounded-full py-1 mb-4 border-2 border-orange-300 dark:border-orange-800">
+                  <p class="text-xl font-black text-amber-600 dark:text-amber-500">{{ teams[2].score }} <span class="text-xs">EXP</span></p>
+                </div>
+                <div class="flex gap-2 w-full">
+                  <button @click="joinTeamPrompt(teams[2])" class="btn-rpg flex-1 bg-green-500 text-white hover:bg-green-400 border-green-700 h-11">{{ t('joinTeam') }}</button>
+                  <button @click="viewMembers(teams[2])" class="btn-rpg bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 border-blue-300 dark:border-blue-700 w-11 h-11"><i class="ph-bold ph-users text-lg"></i></button>
+                </div>
+              </div>
             </div>
-            <div class="overflow-y-auto flex-1 space-y-2" id="members-list-container"></div>
-        </div>
-    </div>
+          </div>
 
-    <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxFLwdZkQprErInEHTfzGuvbQzrGGs_WPYXWsOFaZeCRvE9BtZxAfyJadL5IgEyOURT/exec";
+          <!-- Rest of the Teams (List/Grid) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div v-for="(team, index) in teams.slice(3)" :key="team.id" class="rpg-card p-3 flex items-center gap-3 hover:bg-white/50 dark:hover:bg-black/20">
+              <div class="font-chibi font-black text-2xl text-gray-400 dark:text-gray-500 w-10 text-center flex items-center justify-center">
+                <img v-if="getEffectiveBadge(team, index + 4)" :src="getEffectiveBadge(team, index + 4)" class="w-10 h-10 object-contain">
+                <span v-else>#{{ index + 4 }}</span>
+              </div>
+              <div class="relative">
+                <img :src="getEffectiveAvatar(team, index + 4)" @error="$event.target.src='https://ui-avatars.com/api/?name='+team.name+'&background=f59e0b&color=fff'; $event.target.onerror=null;" class="w-14 h-14 rounded-full border-2 border-gray-300 dark:border-gray-600 bg-white object-cover">
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-chibi font-bold text-lg leading-tight truncate">{{ team.name }}</h4>
+                <p class="text-amber-600 dark:text-amber-400 font-bold text-sm bg-amber-100 dark:bg-slate-800 inline-block px-2 rounded-md mt-1 border border-amber-200 dark:border-slate-600">{{ team.score }} EXP</p>
+              </div>
+              <div class="flex flex-col gap-2">
+                <button @click="viewMembers(team)" class="btn-rpg bg-blue-100 text-blue-600 border-blue-300 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 w-10 h-10"><i class="ph-bold ph-users"></i></button>
+                <button @click="joinTeamPrompt(team)" class="btn-rpg bg-green-100 text-green-600 border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-700 w-10 h-10"><i class="ph-bold ph-user-plus"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADMIN: MANAGE TEAMS -->
+        <div v-show="activeTab === 'adminTeams' && isAdmin">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">{{ t('manageTeams') }}</h2>
+            <button v-if="adminRole === 'super'" @click="adminCreateTeam" class="bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2 border-b-4 border-amber-700"><i class="ph-bold ph-plus"></i> {{ t('newTeam') }}</button>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div v-for="team in teams" :key="'admin'+team.id" class="rpg-card p-4 rounded-xl flex flex-col md:flex-row items-center gap-4">
+              <img :src="getEffectiveAvatar(team, teams.findIndex(t => t.id === team.id) + 1)" @error="$event.target.src='https://ui-avatars.com/api/?name='+team.name+'&background=f59e0b&color=fff'; $event.target.onerror=null;" class="w-16 h-16 rounded-full bg-black/10 p-1 border-2 border-gray-300 dark:border-slate-600 object-cover">
+              <div class="flex-1 text-center md:text-left w-full">
+                <h4 class="font-bold text-lg">{{ team.name }}</h4>
+                <p class="text-sm opacity-70">ID: {{ team.id }}</p>
+              </div>
+              <div class="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
+                <button @click="adminManageExp(team, 'add')" class="flex-1 md:flex-none bg-green-500 text-white px-4 py-2 rounded-lg font-bold min-h-[44px]">+ EXP</button>
+                <button @click="adminManageExp(team, 'sub')" class="flex-1 md:flex-none bg-red-500 text-white px-4 py-2 rounded-lg font-bold min-h-[44px]">- EXP</button>
+                <button v-if="adminRole === 'super'" @click="adminDeleteTeam(team)" class="bg-gray-500 text-white px-4 py-2 rounded-lg font-bold min-h-[44px]"><i class="ph-bold ph-trash"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADMIN: LOGS -->
+        <div v-show="activeTab === 'adminLogs' && isAdmin" class="rpg-card rounded-xl p-4 md:p-6 overflow-x-auto">
+          <h2 class="text-2xl font-bold mb-6">{{ t('logs') }}</h2>
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-gray-500/30">
+                <th class="p-3">{{ t('time') }}</th>
+                <th class="p-3">{{ t('action') }}</th>
+                <th class="p-3">Team ID</th>
+                <th class="p-3">Details</th>
+                <th class="p-3">EXP</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(log, i) in paginatedLogs" :key="i" class="border-b border-gray-500/10 hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="p-3 text-sm opacity-80">{{ new Date(log.timestamp).toLocaleString() }}</td>
+                <td class="p-3 font-bold text-xs"><span class="bg-amber-100 dark:bg-slate-800 text-amber-600 dark:text-amber-400 px-2 py-1 rounded border border-amber-200 dark:border-slate-600">{{ log.action }}</span></td>
+                <td class="p-3 text-sm">{{ log.team_id }}</td>
+                <td class="p-3">{{ log.details }}</td>
+                <td class="p-3 font-bold" :class="log.exp_change > 0 ? 'text-green-500' : (log.exp_change < 0 ? 'text-red-500' : '')">{{ log.exp_change }}</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <!-- Pagination -->
+          <div class="flex justify-between items-center mt-6">
+            <button @click="logPage--" :disabled="logPage === 1" class="px-4 py-2 bg-gray-200 dark:bg-slate-800 rounded disabled:opacity-30 font-bold border-b-2 border-gray-300 dark:border-slate-900">Prev</button>
+            <span class="font-bold font-chibi">Page {{ logPage }} of {{ maxLogPage || 1 }}</span>
+            <button @click="logPage++" :disabled="logPage >= maxLogPage" class="px-4 py-2 bg-gray-200 dark:bg-slate-800 rounded disabled:opacity-30 font-bold border-b-2 border-gray-300 dark:border-slate-900">Next</button>
+          </div>
+        </div>
+
+        <!-- ADMIN: SETTINGS -->
+        <div v-show="activeTab === 'adminSettings' && isAdmin">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold font-chibi">{{ t('settings') }}</h2>
+          </div>
+          
+          <div class="grid grid-cols-1 gap-4">
+            <div v-for="setting in rankSettings" :key="'rank'+setting.rank" class="rpg-card p-4 flex flex-col md:flex-row items-center gap-6">
+              <!-- Rank Number -->
+              <div class="flex-shrink-0 flex flex-col items-center">
+                <div class="w-16 h-16 flex items-center justify-center bg-gray-200 dark:bg-gray-800 rounded-full border-4 border-gray-300 dark:border-gray-600 font-chibi font-black text-2xl shadow-inner">
+                  #{{ setting.rank }}
+                </div>
+                <span v-if="setting.rank === 0" class="text-[10px] font-bold mt-2 text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-slate-800 px-2 py-1 rounded-md border border-amber-300 dark:border-slate-600 text-center leading-tight">คะแนน 0</span>
+              </div>
+              
+              <!-- Input Fields -->
+              <div class="flex-1 w-full space-y-3">
+                <div>
+                  <label class="text-xs font-bold opacity-70 uppercase tracking-wide">{{ t('avatarUrl') }}</label>
+                  <input v-model="setting.avatar_url" type="text" class="w-full p-2 mt-1 rounded-xl border-2 border-gray-300 dark:border-slate-600 dark:bg-slate-800 focus:outline-none focus:border-amber-500 transition" :placeholder="t('avatarUrl')">
+                </div>
+                <div>
+                  <label class="text-xs font-bold opacity-70 uppercase tracking-wide">{{ t('badgeUrl') }}</label>
+                  <input v-model="setting.badge_url" type="text" class="w-full p-2 mt-1 rounded-xl border-2 border-gray-300 dark:border-slate-600 dark:bg-slate-800 focus:outline-none focus:border-amber-500 transition" :placeholder="t('badgeUrl')">
+                </div>
+              </div>
+
+              <!-- Save Button -->
+              <div class="w-full md:w-auto mt-2 md:mt-0 flex flex-col justify-center">
+                <button @click="saveSetting(setting)" class="btn-rpg bg-green-500 text-white px-8 py-3 rounded-xl font-bold min-h-[44px] hover:bg-green-400 border-green-700 w-full text-lg shadow-md flex items-center justify-center gap-2">
+                  <i class="ph-bold ph-floppy-disk"></i> {{ t('save') }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    // REPLACE THIS WITH YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP URL
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxFLwdZkQprErInEHTfzGuvbQzrGGs_WPYXWsOFaZeCRvE9BtZxAfyJadL5IgEyOURT/exec';
+
+    // i18n Dictionary
+    const dictionary = {
+      th: {
+        loading: "กำลังโหลดข้อมูลดินแดน...",
+        leaderboard: "กระดานผู้นำ",
+        subtitle: "ศึกชิงความเป็นหนึ่งแห่ง CARE Workshop",
+        joinTeam: "เข้าร่วมทีม",
+        viewMembers: "ดูสมาชิก",
+        empId: "รหัสพนักงาน (7 หลัก)",
+        nickname: "ชื่อเล่น",
+        plant: "สาขา (Plant)",
+        submit: "ยืนยัน",
+        cancel: "ยกเลิก",
+        manageTeams: "จัดการทีม",
+        logs: "บันทึกกิจกรรม",
+        newTeam: "สร้างทีมใหม่",
+        time: "เวลา",
+        action: "การกระทำ",
+        success: "สำเร็จ!",
+        error: "เกิดข้อผิดพลาด",
+        membersOf: "สมาชิกทีม",
+        noMembers: "ยังไม่มีสมาชิกในทีมนี้",
+        reason: "เหตุผลที่เพิ่ม/ลด",
+        expAmount: "จำนวน EXP",
+        settings: "ตั้งค่าระบบ",
+        avatarUrl: "รูปอวตาร (URL)",
+        badgeUrl: "รูปตราสัญลักษณ์ (URL)",
+        save: "บันทึกข้อมูล"
+      },
+      en: {
+        loading: "Loading the Realm...",
+        leaderboard: "Leaderboard",
+        subtitle: "The Ultimate Battle of CARE Workshop",
+        joinTeam: "Join Team",
+        viewMembers: "Members",
+        empId: "Employee ID (7 digits)",
+        nickname: "Nickname",
+        plant: "Plant",
+        submit: "Confirm",
+        cancel: "Cancel",
+        manageTeams: "Manage Teams",
+        logs: "Activity Logs",
+        newTeam: "Create Team",
+        time: "Time",
+        action: "Action",
+        success: "Success!",
+        error: "Error",
+        membersOf: "Members of",
+        noMembers: "No members yet",
+        reason: "Reason for change",
+        expAmount: "EXP Amount",
+        settings: "Settings",
+        avatarUrl: "Avatar URL",
+        badgeUrl: "Badge URL",
+        save: "Save"
+      }
+    };
+
+    // Web Audio Synthesizer (No external assets needed)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playTone(freq, type, duration, vol=0.1) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration/1000);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), duration);
+    }
+
+    createApp({
+      data() {
+        return {
+          lang: localStorage.getItem('lang') || 'th',
+          theme: localStorage.getItem('theme') || 'light',
+          sound: localStorage.getItem('sound') !== 'false',
+          teams: [],
+          logs: [],
+          isLoading: true,
+          isRefreshing: false,
+          isAdmin: false,
+          adminRole: '',
+          adminToken: '',
+          activeTab: 'leaderboard',
+          logPage: 1,
+          logsPerPage: 10,
+          rankSettings: [
+            { rank: 0, avatar_url: '', badge_url: '' },
+            { rank: 1, avatar_url: '', badge_url: '' },
+            { rank: 2, avatar_url: '', badge_url: '' },
+            { rank: 3, avatar_url: '', badge_url: '' },
+            { rank: 4, avatar_url: '', badge_url: '' },
+            { rank: 5, avatar_url: '', badge_url: '' }
+          ]
+        };
+      },
+      computed: {
+        paginatedLogs() {
+          const start = (this.logPage - 1) * this.logsPerPage;
+          return this.logs.slice(start, start + this.logsPerPage);
+        },
+        maxLogPage() {
+          return Math.ceil(this.logs.length / this.logsPerPage);
+        }
+      },
+      methods: {
+        getRankSetting(rankNum) {
+          return this.rankSettings.find(s => String(s.rank) === String(rankNum)) || {};
+        },
+        getEffectiveAvatar(team, currentRank) {
+          if (!team) return '';
+          // ดักจับถ้าคะแนนเท่ากับหรือน้อยกว่า 0 ให้ใช้รูปของ Rank 0 เป็นหลัก
+          if (Number(team.score) <= 0) {
+            const zeroSetting = this.getRankSetting(0);
+            if (zeroSetting && zeroSetting.avatar_url) return zeroSetting.avatar_url;
+          }
+          // นอกเหนือจากนั้น ค่อยใช้รูปประจำอันดับ (ถ้ามี)
+          const rankSetting = this.getRankSetting(currentRank);
+          if (rankSetting && rankSetting.avatar_url) return rankSetting.avatar_url;
+          // ถ้าไม่มี ให้ใช้รูปเดิมของทีม หรือรูปตัวอักษรสำรอง
+          return team.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(team.name)}&background=f59e0b&color=fff`;
+        },
+        getEffectiveBadge(team, currentRank) {
+          if (!team) return '';
+          // ดักจับถ้าคะแนนเท่ากับหรือน้อยกว่า 0 ให้ใช้ป้ายของ Rank 0
+          if (Number(team.score) <= 0) {
+            const zeroSetting = this.getRankSetting(0);
+            if (zeroSetting && zeroSetting.badge_url) return zeroSetting.badge_url;
+          }
+          // นอกเหนือจากนั้น ค่อยใช้ป้ายประจำอันดับ (ถ้ามี)
+          const rankSetting = this.getRankSetting(currentRank);
+          if (rankSetting && rankSetting.badge_url) return rankSetting.badge_url;
+          return '';
+        },
+        t(key) {
+          return dictionary[this.lang][key] || key;
+        },
+        playSound(type) {
+          if (!this.sound) return;
+          if (type === 'click') playTone(400, 'sine', 100);
+          if (type === 'success') { playTone(600, 'triangle', 150); setTimeout(()=>playTone(800, 'triangle', 200), 100); }
+          if (type === 'error') { playTone(200, 'sawtooth', 300); }
+        },
+        toggleLang() {
+          this.playSound('click');
+          this.lang = this.lang === 'th' ? 'en' : 'th';
+          localStorage.setItem('lang', this.lang);
+        },
+        toggleTheme() {
+          this.playSound('click');
+          this.theme = this.theme === 'dark' ? 'light' : 'dark';
+          localStorage.setItem('theme', this.theme);
+        },
+        toggleSound() {
+          this.sound = !this.sound;
+          localStorage.setItem('sound', this.sound);
+          if(this.sound) this.playSound('click');
+        },
         
-        let guildsData = [];
-        let rankUrlsConfig = {};
-        let guildMembers = JSON.parse(localStorage.getItem('chibi_guild_members')) || {};
-        let currentJoinGuildId = null;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchData();
-            document.getElementById('admin-pin-input').addEventListener('keypress', (e) => e.key === 'Enter' && verifyPin());
-        });
-
-        async function fetchData() {
-            try {
-                const response = await fetch(GAS_API_URL);
-                const result = await response.json();
-                if (result.status === 'success') {
-                    guildsData = result.teams || [];
-                    rankUrlsConfig = result.ranks || {};
-                    renderLeaderboard();
-                }
-            } catch (err) {
-                showToast("ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้ (โหมดจำลอง)", "error");
-            }
-        }
-
-        async function callAPI(payload) {
-            try {
-                await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(payload)
-                });
-                return { status: 'success' };
-            } catch (err) {
-                console.error(err);
-                return { status: 'error' };
-            }
-        }
-
-        function renderLeaderboard() {
-            const top3Container = document.getElementById('top3-container');
-            const othersContainer = document.getElementById('others-container');
-            top3Container.innerHTML = '';
-            othersContainer.innerHTML = '';
-
-            const sorted = [...guildsData].sort((a, b) => b.score - a.score);
-            const top3 = sorted.slice(0, 3);
-            const others = sorted.slice(3);
-
-            const podiumOrder = [
-                { rank: 2, data: top3[1], badge: '🥈', h: 'h-48 md:h-56', size: 'w-20 h-20 md:w-24 md:h-24', order: 1 },
-                { rank: 1, data: top3[0], badge: '👑', h: 'h-56 md:h-64', size: 'w-24 h-24 md:w-28 md:h-28', order: 2, isCenter: true },
-                { rank: 3, data: top3[2], badge: '🥉', h: 'h-44 md:h-52', size: 'w-16 h-16 md:w-20 md:h-20', order: 3 }
-            ].sort((a,b) => a.order - b.order);
-
-            podiumOrder.forEach(slot => {
-                if (!slot.data) return;
-                const g = slot.data;
-                const rUrls = rankUrlsConfig[slot.rank] || { char: '', badge: '' };
-                const badgeHtml = rUrls.badge ? `<img src="${rUrls.badge}" class="w-10 h-10 glow-badge object-contain">` : `<div class="text-3xl glow-badge">${slot.badge}</div>`;
-                
-                top3Container.innerHTML += `
-                    <div id="guild-${g.id}" class="relative flex flex-col items-center justify-end w-28 md:w-40 ${slot.h} rounded-t-2xl border-2 border-white/50 shadow-lg transition transform hover:-translate-y-2" style="background-color: ${g.color}EE;">
-                        <div class="absolute -top-12 md:-top-16 flex flex-col items-center w-full">
-                            <div class="relative ${slot.isCenter ? 'animate-chibi' : 'animate-chibi-fast'}">
-                                <div class="rank-badge-container">${badgeHtml}</div>
-                                ${generateImageElement(rUrls.char, g.logo, slot.size)}
-                            </div>
-                        </div>
-                        <div class="text-center w-full p-2 pb-4 bg-white/30 rounded-t-xl mt-auto backdrop-blur-sm">
-                            <div class="font-bold text-gray-800 text-sm md:text-base truncate px-1">${g.name}</div>
-                            <div class="text-pink-600 font-extrabold text-lg mt-1"><i class="fas fa-star text-yellow-400"></i> ${g.score.toLocaleString()}</div>
-                            <div class="flex gap-2 justify-center mt-2">
-                                <button onclick="openMembersModal('${g.id}')" class="w-8 h-8 rounded-full bg-blue-400 text-white text-xs"><i class="fas fa-users"></i></button>
-                                <button onclick="openJoinModal('${g.id}')" class="px-3 py-1 bg-white text-pink-500 rounded-full text-xs font-bold shadow-sm">เข้าร่วม</button>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-
-            others.forEach((g, idx) => {
-                const rank = idx + 4;
-                const rUrls = rankUrlsConfig[rank] || { char: '', badge: '' };
-                othersContainer.innerHTML += `
-                    <div id="guild-${g.id}" class="chibi-card relative flex items-center bg-white rounded-2xl p-3 shadow-sm border-l-[6px]" style="border-left-color: ${g.color};">
-                        <div class="w-10 font-bold text-gray-400 text-xl text-center mr-2">#${rank}</div>
-                        <div class="relative animate-chibi-fast mr-4">
-                            ${rUrls.badge ? `<img src="${rUrls.badge}" class="absolute -top-2 -right-2 w-6 h-6 z-10 glow-badge">` : ''}
-                            ${generateImageElement(rUrls.char, g.logo, 'w-14 h-14')}
-                        </div>
-                        <div class="flex-1"><div class="font-bold text-lg text-gray-800">${g.name}</div></div>
-                        <div class="flex items-center gap-2">
-                            <div class="text-right"><div class="text-lg font-bold text-pink-500 bg-pink-50 px-2 py-1 rounded-lg">${g.score.toLocaleString()}</div></div>
-                            <button onclick="openMembersModal('${g.id}')" class="bg-blue-100 text-blue-500 w-10 h-10 rounded-full flex items-center justify-center"><i class="fas fa-users"></i></button>
-                            <button onclick="openJoinModal('${g.id}')" class="bg-pink-400 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-md"><i class="fas fa-user-plus"></i></button>
-                        </div>
-                    </div>`;
-            });
-        }
-
-        function generateImageElement(url, fallback, size) {
-            return `<img src="${url}" class="${size} img-circle-glow" onerror="this.outerHTML='<div class=\\'${size} fallback-emoji\\'>${fallback}</div>'">`;
-        }
-
-        // --- Auth & Modals ---
-        function openPinModal() {
-            // ล้างค่าเก่าก่อนเปิดเสมอ
-            document.getElementById('admin-pin-input').value = '';
-            document.getElementById('pin-modal').classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('pin-modal').classList.remove('opacity-0');
-                document.getElementById('pin-modal-content').classList.remove('scale-95');
-                document.getElementById('admin-pin-input').focus();
-            }, 10);
-        }
-
-        function closePinModal() {
-            // ล้างรหัสผ่านทุกครั้งที่ปิดหน้าต่างกรอก PIN
-            document.getElementById('admin-pin-input').value = '';
-            document.getElementById('pin-modal').classList.add('opacity-0');
-            document.getElementById('pin-modal-content').classList.add('scale-95');
-            setTimeout(() => document.getElementById('pin-modal').classList.add('hidden'), 300);
-        }
-
-        function verifyPin() {
-            const pinInput = document.getElementById('admin-pin-input');
-            const pin = pinInput.value;
-            if (pin === '0000') {
-                // ล้างรหัสทันทีเมื่อยืนยันสำเร็จก่อนเข้าหน้า Admin
-                pinInput.value = '';
-                closePinModal();
-                showToast("🔓 ปลดล็อกระบบผู้ดูแลสำเร็จ!", "success");
-                setTimeout(openAdminPanel, 300);
+        async refreshData() {
+          if(this.isRefreshing) return;
+          this.playSound('click');
+          this.isRefreshing = true;
+          await this.loadData(false);
+          if(this.isAdmin && this.adminRole === 'super') {
+            await this.loadAdminData();
+          }
+          this.isRefreshing = false;
+        },
+        
+        async fetchAPI(action, payload = {}) {
+          try {
+            // สำหรับการดึงข้อมูล (Read) ให้ใช้ GET และแนบพารามิเตอร์ไปกับ URL
+            if (action.startsWith('get')) {
+              let url = `${API_URL}?action=${action}`;
+              for (const key in payload) {
+                url += `&${key}=${encodeURIComponent(payload[key])}`;
+              }
+              const response = await fetch(url);
+              const data = await response.json();
+              if (!data.success) throw new Error(data.message);
+              return data;
             } else {
-                showToast("❌ รหัส PIN ไม่ถูกต้อง!", "error");
-                pinInput.value = '';
-                pinInput.focus();
+              // สำหรับการเปลี่ยนแปลงข้อมูล (Mutation) ให้ใช้ POST
+              payload.action = action;
+              if (this.adminToken) payload.token = this.adminToken;
+              const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Avoids CORS preflight issues in GAS
+                body: JSON.stringify(payload)
+              });
+              const data = await response.json();
+              if (!data.success) throw new Error(data.message);
+              return data;
             }
-        }
+          } catch (err) {
+            console.error(err);
+            throw err;
+          }
+        },
 
-        function openAdminPanel() {
-            renderAdminPanel();
-            document.getElementById('admin-modal').classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('admin-modal').classList.remove('opacity-0');
-                document.getElementById('admin-modal-content').classList.remove('scale-95');
-            }, 10);
-        }
+        async loadData(showLoader = true) {
+          if (showLoader) this.isLoading = true;
+          try {
+            const res = await this.fetchAPI('getTeams');
+            this.teams = res.data || [];
 
-        function closeAdminPanel() {
-            // ล้างรหัสผ่าน (ถ้ามีค้างใน Input) ทุกครั้งที่ปิดหน้าต่าง Admin หลัก
-            document.getElementById('admin-pin-input').value = '';
-            document.getElementById('admin-modal').classList.add('opacity-0');
-            document.getElementById('admin-modal-content').classList.add('scale-95');
-            setTimeout(() => document.getElementById('admin-modal').classList.add('hidden'), 300);
-        }
-
-        function switchTab(tab) {
-            ['manage', 'urls', 'add'].forEach(t => {
-                document.getElementById(`panel-${t}`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).className = 'flex-1 py-3 px-2 font-semibold text-gray-500 hover:bg-gray-50';
-            });
-            document.getElementById(`panel-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).className = 'flex-1 py-3 px-2 font-semibold text-pink-600 border-b-4 border-pink-400 bg-pink-50/50';
-        }
-
-        function renderAdminPanel() {
-            const mC = document.getElementById('panel-manage');
-            const uC = document.getElementById('panel-urls');
-            mC.innerHTML = ''; uC.innerHTML = '';
-            const sorted = [...guildsData].sort((a, b) => b.score - a.score);
-
-            sorted.forEach((g, idx) => {
-                const rank = idx + 1;
-                const rUrl = rankUrlsConfig[rank]?.char || '';
-                mC.innerHTML += `
-                    <div class="bg-white p-3 rounded-xl border flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <span class="text-gray-400 font-bold w-6">#${rank}</span>
-                            ${generateImageElement(rUrl, g.logo, 'w-10 h-10')}
-                            <div class="font-bold text-gray-700">${g.name}</div>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <input type="number" id="exp-input-${g.id}" class="w-16 text-center border rounded p-1" value="100">
-                            <button onclick="modifyExp('${g.id}', true)" class="bg-green-400 text-white w-8 h-8 rounded"><i class="fas fa-plus"></i></button>
-                            <button onclick="modifyExp('${g.id}', false)" class="bg-red-400 text-white w-8 h-8 rounded"><i class="fas fa-minus"></i></button>
-                            <button onclick="deleteGuild('${g.id}', '${g.name}')" class="ml-1 text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>`;
-            });
-
-            for (let r = 1; r <= Math.max(5, sorted.length); r++) {
-                const rU = rankUrlsConfig[r] || { char: '', badge: '' };
-                const current = sorted[r-1] ? `<span class="text-pink-400 text-xs">(${sorted[r-1].name})</span>` : '';
-                uC.innerHTML += `
-                    <div class="bg-white p-4 rounded-xl border space-y-2">
-                        <div class="font-bold text-gray-700">อันดับที่ ${r} ${current}</div>
-                        <div class="space-y-2 text-sm">
-                            <input type="text" id="edit-char-rank-${r}" value="${rU.char}" class="w-full border p-2 rounded" placeholder="URL รูปตัวละคร">
-                            <input type="text" id="edit-badge-rank-${r}" value="${rU.badge}" class="w-full border p-2 rounded" placeholder="URL รูป Badge (ถ้ามี)">
-                            <button onclick="saveRankUrls(${r})" class="w-full bg-blue-500 text-white py-1 rounded">บันทึกอันดับ ${r}</button>
-                        </div>
-                    </div>`;
+            // Fetch settings for public view
+            try {
+              const setRes = await this.fetchAPI('getSettings');
+              if(setRes.data && setRes.data.length > 0) {
+                setRes.data.forEach(fetchedSetting => {
+                  const index = this.rankSettings.findIndex(r => String(r.rank) === String(fetchedSetting.rank));
+                  if(index > -1) {
+                    this.rankSettings[index].avatar_url = fetchedSetting.avatar_url || '';
+                    this.rankSettings[index].badge_url = fetchedSetting.badge_url || '';
+                  }
+                });
+              }
+            } catch(e) {
+               console.log('Settings API is not implemented yet on GAS.');
             }
-        }
 
-        // --- User Actions ---
-        function openJoinModal(id) {
-            const g = guildsData.find(x => x.id === id);
-            currentJoinGuildId = id;
-            document.getElementById('join-modal-title').innerText = `เข้าร่วมกิลด์ ${g.name}`;
-            document.getElementById('join-modal-emoji').innerText = g.logo || '🛡️';
-            document.getElementById('join-modal').classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('join-modal').classList.remove('opacity-0');
-                document.getElementById('join-modal-content').classList.remove('scale-95');
-            }, 10);
-        }
+          } catch (e) {
+            Swal.fire(this.t('error'), 'Could not connect to database.', 'error');
+          } finally {
+            if (showLoader) this.isLoading = false;
+          }
+        },
 
-        function closeJoinModal() {
-            document.getElementById('join-modal').classList.add('opacity-0');
-            document.getElementById('join-modal-content').classList.add('scale-95');
-            setTimeout(() => document.getElementById('join-modal').classList.add('hidden'), 300);
-        }
+        async viewMembers(team) {
+          this.playSound('click');
+          Swal.fire({
+            title: this.t('loading'),
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+          });
 
-        function submitJoinGuild() {
-            const nick = document.getElementById('join-nickname-input').value.trim();
-            if (!nick) return showToast("ใส่ชื่อเล่นด้วยนะ!", "error");
-            if (!guildMembers[currentJoinGuildId]) guildMembers[currentJoinGuildId] = [];
-            guildMembers[currentJoinGuildId].push({ name: nick });
-            localStorage.setItem('chibi_guild_members', JSON.stringify(guildMembers));
-            showToast(`🎉 ยินดีต้อนรับ ${nick}!`, "success");
-            closeJoinModal();
-        }
+          try {
+            const res = await this.fetchAPI('getMembers', { team_id: team.id });
+            const members = res.data || [];
+            
+            let html = `<div class="max-h-60 overflow-y-auto text-left">`;
+            if (members.length === 0) {
+              html += `<p class="text-center opacity-70">${this.t('noMembers')}</p>`;
+            } else {
+              members.forEach(m => {
+                html += `<div class="p-2 border-b border-gray-500/20 flex justify-between">
+                  <span><b>${m.nickname}</b> (${m.plant})</span>
+                  <span class="opacity-50 text-sm">${m.emp_id.substring(0,3)}****</span>
+                </div>`;
+              });
+            }
+            html += `</div>`;
 
-        function openMembersModal(id) {
-            const g = guildsData.find(x => x.id === id);
-            document.getElementById('members-modal-title').innerText = `สมาชิกกิลด์ ${g.name}`;
-            const list = document.getElementById('members-list-container');
-            list.innerHTML = '';
-            const members = guildMembers[id] || [];
-            if (members.length === 0) list.innerHTML = `<div class="text-center py-4 text-gray-400">ยังไม่มีสมาชิก</div>`;
-            else members.forEach((m, idx) => {
-                list.innerHTML += `<div class="bg-gray-50 p-2 rounded flex gap-2"><span class="text-blue-400">${idx+1}</span> ${m.name}</div>`;
+            Swal.fire({
+              title: `${this.t('membersOf')} ${team.name}`,
+              html: html,
+              confirmButtonColor: '#f59e0b'
             });
-            document.getElementById('members-modal').classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('members-modal').classList.remove('opacity-0');
-                document.getElementById('members-modal-content').classList.remove('scale-95');
-            }, 10);
-        }
+          } catch(e) {
+            Swal.fire(this.t('error'), e.message, 'error');
+          }
+        },
 
-        function closeMembersModal() {
-            document.getElementById('members-modal').classList.add('opacity-0');
-            document.getElementById('members-modal-content').classList.add('scale-95');
-            setTimeout(() => document.getElementById('members-modal').classList.add('hidden'), 300);
-        }
+        async joinTeamPrompt(team) {
+          this.playSound('click');
+          
+          // ดึงรูปอวตารของทีม (รองรับดึงจาก Setting หากอยู่ใน Top หรือคะแนน 0)
+          const tIndex = this.teams.findIndex(t => t.id === team.id);
+          const rankNum = tIndex > -1 ? tIndex + 1 : 99;
+          const avatarToUse = this.getEffectiveAvatar(team, rankNum);
 
-        // --- Logic & Feedback ---
-        async function modifyExp(id, isAdd) {
-            const input = document.getElementById(`exp-input-${id}`);
-            const amount = Number(input.value) || 0;
-            const guild = guildsData.find(g => g.id === id);
-            guild.score = Math.max(0, guild.score + (isAdd ? amount : -amount));
-            renderLeaderboard(); renderAdminPanel();
-            spawnFloatingExp(id, (isAdd ? amount : -amount));
-            showToast(isAdd ? `🔥 +${amount} EXP!` : `💥 -${amount} EXP!`, isAdd ? 'exp-up' : 'error');
-            await callAPI({ action: 'updateExp', id, score: guild.score });
-        }
+          const { value: formValues } = await Swal.fire({
+            title: `${this.t('joinTeam')}`,
+            html: `
+              <div class="flex flex-col items-center mb-6 mt-2">
+                <div class="relative mb-3">
+                  <div class="absolute inset-0 bg-amber-400 blur-md rounded-full opacity-40 animate-pulse"></div>
+                  <img src="${avatarToUse}" class="relative w-24 h-24 rounded-full border-4 border-amber-400 object-cover bg-white z-10" onerror="this.src='https://ui-avatars.com/api/?name=${team.name}&background=f59e0b&color=fff'">
+                </div>
+                <h3 class="font-chibi font-black text-2xl text-amber-600 dark:text-amber-400">${team.name}</h3>
+              </div>
+              <div class="text-left w-[85%] mx-auto">
+                <label class="text-sm font-bold opacity-70 ml-1">${this.t('empId')}</label>
+                <input id="swal-emp" class="swal2-input" style="width: 100% !important; margin: 0.5em 0 1em 0 !important;" placeholder="XXXXXXX" maxlength="7" type="number">
+                
+                <label class="text-sm font-bold opacity-70 ml-1">${this.t('nickname')}</label>
+                <input id="swal-nick" class="swal2-input" style="width: 100% !important; margin: 0.5em 0 1em 0 !important;" placeholder="ตัวอย่าง: นักรบมังกร">
+                
+                <label class="text-sm font-bold opacity-70 ml-1">${this.t('plant')}</label>
+                <select id="swal-plant" class="swal2-select cursor-pointer" style="width: 100% !important; margin: 0.5em 0 1em 0 !important;">
+                  <option value="" disabled selected>-- เลือก --</option>
+                  <option value="AAA">AAA</option>
+                  <option value="BB">BB</option>
+                  <option value="LPN">LPN</option>
+                </select>
+              </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: `<i class="ph-bold ph-check-circle align-middle mr-1"></i> ${this.t('submit')}`,
+            cancelButtonText: `<i class="ph-bold ph-x-circle align-middle mr-1"></i> ${this.t('cancel')}`,
+            preConfirm: () => {
+              const emp_id = document.getElementById('swal-emp').value;
+              const nickname = document.getElementById('swal-nick').value;
+              const plant = document.getElementById('swal-plant').value;
+              if (!/^\d{7}$/.test(emp_id)) return Swal.showValidationMessage('กรุณากรอกรหัสพนักงาน 7 หลัก');
+              if (!nickname) return Swal.showValidationMessage('กรุณากรอกชื่อเล่น');
+              if (!plant) return Swal.showValidationMessage('กรุณาเลือกสาขา');
+              return { emp_id, nickname, plant, team_id: team.id };
+            }
+          });
 
-        async function saveRankUrls(rank) {
-            const char = document.getElementById('edit-char-rank-' + rank).value;
-            const badge = document.getElementById('edit-badge-rank-' + rank).value;
-            rankUrlsConfig[rank] = { char, badge };
-            renderLeaderboard();
-            showToast(`✨ อัปเดตสกินอันดับ ${rank} แล้ว!`);
-            await callAPI({ action: 'updateRankUrls', rank, char, badge });
-        }
+          if (formValues) {
+            Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+              await this.fetchAPI('joinTeam', formValues);
+              this.playSound('success');
+              Swal.fire(this.t('success'), 'Welcome to the team!', 'success');
+            } catch(e) {
+              this.playSound('error');
+              Swal.fire(this.t('error'), e.message, 'error');
+            }
+          }
+        },
 
-        async function submitAddGuild() {
-            const name = document.getElementById('add-name').value;
-            if (!name) return showToast("ใส่ชื่อกิลด์ด้วยนะ!", "error");
-            const newG = { id: Date.now().toString(), name, score: 0, color: '#FFB6C1', logo: '🛡️' };
-            guildsData.push(newG); renderLeaderboard();
-            showToast("🎉 สร้างกิลด์สำเร็จ!", "success");
-            await callAPI({ action: 'add', data: newG });
-            document.getElementById('add-name').value = '';
-            switchTab('manage');
-        }
+        // --- ADMIN FUNCTIONS ---
+        async adminAuth() {
+          this.playSound('click');
+          if (this.isAdmin) {
+            this.isAdmin = false;
+            this.adminToken = '';
+            this.adminRole = '';
+            this.activeTab = 'leaderboard';
+            return;
+          }
 
-        async function deleteGuild(id, name) {
-            if (!confirm(`ต้องการลบกิลด์ ${name} ใช่หรือไม่?`)) return;
-            guildsData = guildsData.filter(x => x.id !== id);
-            renderLeaderboard(); renderAdminPanel();
-            showToast(`🗑️ ลบกิลด์ ${name} แล้ว`, "success");
-            await callAPI({ action: 'delete', id });
-        }
+          const { value: pin } = await Swal.fire({
+            title: 'Admin Access',
+            input: 'password',
+            inputPlaceholder: 'Enter PIN',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444'
+          });
 
-        function showToast(msg, type) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            const bg = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-pink-400';
-            toast.className = `toast-enter ${bg} text-white px-6 py-3 rounded-xl shadow-lg font-bold flex items-center gap-2`;
-            toast.innerHTML = `<i class="fas fa-info-circle"></i> <span>${msg}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
+          if (pin) {
+            Swal.fire({ title: 'Authenticating...', didOpen: () => Swal.showLoading() });
+            try {
+              const res = await this.fetchAPI('adminLogin', { pin });
+              this.adminToken = res.token;
+              this.isAdmin = true;
+              this.adminRole = res.role || 'super'; // Default
+              this.activeTab = 'adminTeams';
+              this.playSound('success');
+              
+              if (this.adminRole === 'score') {
+                Swal.fire('Unlocked', 'ยินดีต้อนรับ Score Admin (สิทธิ์จัดการ EXP)', 'success');
+              } else {
+                Swal.fire('Unlocked', 'Welcome, Game Master.', 'success');
+                this.loadAdminData();
+              }
+            } catch(e) {
+              this.playSound('error');
+              Swal.fire('Access Denied', 'Invalid PIN', 'error');
+            }
+          }
+        },
 
-        function spawnFloatingExp(gId, amt) {
-            const card = document.getElementById(`guild-${gId}`);
-            if (!card) return;
-            const el = document.createElement('div');
-            el.className = `floating-exp ${amt >= 0 ? 'text-green-400' : 'text-red-500'}`;
-            el.innerText = (amt >= 0 ? '+' : '') + amt + ' EXP';
-            card.appendChild(el);
-            setTimeout(() => el.remove(), 1200);
+        async loadAdminData() {
+          const res = await this.fetchAPI('getLogs');
+          this.logs = res.data || [];
+        },
+
+        async saveSetting(setting) {
+          this.playSound('click');
+          Swal.fire({ title: 'Saving...', didOpen: () => Swal.showLoading() });
+          
+          try {
+            await this.fetchAPI('updateSettings', {
+              rank: setting.rank,
+              avatar_url: setting.avatar_url,
+              badge_url: setting.badge_url
+            });
+            this.playSound('success');
+            Swal.fire('Saved!', 'อัปเดตการตั้งค่าสำเร็จ!', 'success');
+          } catch(e) {
+            this.playSound('error');
+            Swal.fire('Error', e.message, 'error');
+          }
+        },
+
+        async adminManageExp(team, type) {
+          const { value: form } = await Swal.fire({
+            title: `${type === 'add' ? '+ ADD' : '- REMOVE'} EXP: ${team.name}`,
+            html: `
+              <input id="exp-amt" type="number" class="swal2-input" placeholder="${this.t('expAmount')}">
+              <input id="exp-reason" class="swal2-input" placeholder="${this.t('reason')}">
+            `,
+            showCancelButton: true,
+            confirmButtonText: this.t('submit'),
+            preConfirm: () => {
+              const amt = Number(document.getElementById('exp-amt').value);
+              const reason = document.getElementById('exp-reason').value;
+              if (!amt || amt <= 0) return Swal.showValidationMessage('Valid amount required');
+              if (!reason) return Swal.showValidationMessage('Reason required');
+              return { exp_change: type === 'add' ? amt : -amt, reason, target_team_id: team.id };
+            }
+          });
+
+          if (form) {
+            Swal.fire({ title: 'Updating...', didOpen: () => Swal.showLoading() });
+            try {
+              await this.fetchAPI('addScore', form);
+              this.playSound('success');
+              
+              // Optimistic UI Update
+              const tIndex = this.teams.findIndex(t => t.id === team.id);
+              if(tIndex > -1) this.teams[tIndex].score = Number(this.teams[tIndex].score) + form.exp_change;
+              this.teams.sort((a, b) => b.score - a.score);
+              
+              Swal.fire('Updated!', '', 'success');
+              this.loadAdminData(); // Refresh logs
+            } catch(e) {
+              Swal.fire('Error', e.message, 'error');
+            }
+          }
+        },
+
+        async adminCreateTeam() {
+          const { value: name } = await Swal.fire({
+            title: this.t('newTeam'),
+            input: 'text',
+            inputPlaceholder: 'Team Name',
+            showCancelButton: true
+          });
+
+          if (name) {
+            Swal.fire({ title: 'Creating...', didOpen: () => Swal.showLoading() });
+            try {
+              await this.fetchAPI('createTeam', { name });
+              this.playSound('success');
+              Swal.fire('Created', '', 'success');
+              this.loadData();
+            } catch(e) {
+              Swal.fire('Error', e.message, 'error');
+            }
+          }
+        },
+
+        async adminDeleteTeam(team) {
+          const { isConfirmed } = await Swal.fire({
+            title: `Delete ${team.name}?`,
+            text: "This action cannot be undone!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444'
+          });
+
+          if (isConfirmed) {
+            Swal.fire({ title: 'Deleting...', didOpen: () => Swal.showLoading() });
+            try {
+              await this.fetchAPI('deleteTeam', { team_id: team.id });
+              this.playSound('success');
+              Swal.fire('Deleted', '', 'success');
+              this.loadData();
+            } catch(e) {
+              Swal.fire('Error', e.message, 'error');
+            }
+          }
         }
-    </script>
+      },
+      mounted() {
+        this.loadData(true);
+      }
+    }).mount('#app');
+  </script>
 </body>
 </html>
